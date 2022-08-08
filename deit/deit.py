@@ -150,9 +150,10 @@ class MultiHeadedSelfAttention(nn.Module):
         self.scale_factor = head_embed_dims ** -0.5
 
         self.to_qkv = nn.Linear(embedding_dimension, embedding_dimension * 3, bias=False)
+        self.attention_dropout = nn.Dropout(dropout_rate)
 
         self.projection = nn.Linear(embedding_dimension, embedding_dimension)
-        self.dropout = nn.Dropout(dropout_rate)
+        self.projection_dropout = nn.Dropout(dropout_rate)
 
     def forward(self, x):
         B, N, C = x.shape
@@ -161,10 +162,11 @@ class MultiHeadedSelfAttention(nn.Module):
 
         similarities = (q @ k.transpose(-2, -1)) * self.scale_factor
         attention_score = similarities.softmax(dim=-1)
+        attention_score = self.attention_dropout(attention_score)
 
         x = (attention_score @ v).transpose(1, 2).reshape(B, N, C)
         x = self.projection(x)
-        x = self.dropout(x)
+        x = self.projection_dropout(x)
         return x
 
 
